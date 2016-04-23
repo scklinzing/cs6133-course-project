@@ -69,10 +69,12 @@ MODULE main
 		esac;
 
 		next(upF2) := case
+			-- Must be on the second floor and going up to turn off  this button
 			(elev = 2) & (mode = goingUp): FALSE;
 		esac;
 
 		next(downF2) := case
+			-- Must be on the second floor and going down to turn off this button.
 			(elev = 2) & (mode = goingDown): FALSE;
 		esac;
 
@@ -85,7 +87,9 @@ MODULE main
 		esac;
 
 		next(button2) := case
+			-- Must be on the second floor and going down an the dest must be goind down.
 			(elev = 2) & (mode = goingDown) & (dest = down2): FALSE;
+			-- Must be on the second floor and going up with the dest going up.
 			(elev = 2) & (mode = goingUp) & (dest = up2): FALSE;
 		esac;
 
@@ -123,21 +127,23 @@ MODULE main
 		------------------------------------------------------------------
 		next(dest) := case
 			(noReq = TRUE) : none;
-			-- If there is a request on the 1st floor and the car is on the 2nd floor
-			(upF1 = TRUE) & (mode = goingDown) & (elev = 2) & (door = open) & (car = still): up1;
-			-- If upF1 is true and the car is going down from the 3rd floor, and there is no req on the 2nd floor, service 1st floor.
-			(upF1 = TRUE) & (mode = goingDown) & (elev = 3) & (downF2 = FALSE) & (button2 = FALSE) & (door = open) & (car = still): up1;
-			-- If upF1 and downF2 are both pressed and the elevator is going down from floor 3, service floor 2 first.
-			((upF1 = TRUE) & (downF2 = TRUE)) & (elev = 3) & (mode = goingDown) & (door = open) & (car = still): down2;
-			-- If there is a req for 2nd floor and we are going down from the third floor, go to 2nd floor next.
-			(downF2 = TRUE) & (mode = goingDown) & (elev = 3) & (door = open) & (car = still): down2;
-			-- If upF2 and downF3 are pressed and the car is going up from the first floor, serice 2nd floor first.
-			((upF2 = TRUE) & (downF3 = TRUE)) & (mode = goingUp) & (elev = 1) & (door = open) & (car = still): up2;
-			-- If there is no req for 2, but there is for 3, and we are going up from floor 1, set dest for floor 3.
-			(upF2 = FALSE) & (button2 = FALSE) & (downF3 = TRUE) & (mode = goingUp) & (elev = 1) & (door = open) & (car = still): down3;
+			-- FIRST FLOOR DESTINATION
+			-- If on the second floor going down and button 1 (in or out) is true, then set dest for floor 1.
+			(elev = 2) & ((upF1 = TRUE) | (button1 = TRUE)) & (mode = goingDown) & (car = still): up1;
+			-- If you are on floor 3 going down, and button 1 (in or out) is pressed, and there is no req for floor 2, go to floor 1.
+			(elev = 3) & ((upF1 = TRUE) | (button1 = TRUE)) & (mode = goingDown) & (downF2 = FALSE) & (button2 = FALSE) & (car = still): up1;
 
+			-- SECOND FLOOR DESTINATION
+			-- If you are on floor 3 going down and button 2 (in or down out) are pressed, go to down 2.
+			(elev = 3) & ((downF2 = TRUE) | (button2 = TRUE)) & (mode = goingDown) & (car = still): down2;
+			-- If you are on floor 1 and going up and button 2 (in or out) is pressed, go to up 2.
+			(elev = 1) & ((upF2 = TRUE) | (button2 = TRUE)) & (mode = goingUp) & (car = still): up2;
 
-
+			-- THIRD FLOOR DESTINATION
+			-- If you are on the second floor going up and button 3 (in or out) is pressed, go to down 3.
+			(elev = 2) & ((downF3 = TRUE) | (button3 = TRUE)) & (mode = goingUp) & (car = still): down3;
+			-- If you are on the first floor goind up and neither of the up 2nd floor buttons are pressed, the dest is 3rd floor.
+			(elev = 1) & (upF2 = FALSE) & (button2 = FALSE) & ((downF3 = TRUE) | (button3 = TRUE)) & (mode = goingUp) & (car = still): down3;
 		esac;
 
 		------------------------------------------------------------------
