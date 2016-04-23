@@ -62,6 +62,38 @@ MODULE main
 		init(button3) := FALSE;
 
 		------------------------------------------------------------------
+		-- Define next case for the BUTTONS.
+		------------------------------------------------------------------
+		next(upF1) := case
+			elev = 1: FALSE;
+		esac;
+
+		next(upF2) := case
+			(elev = 2) & (mode = goingUp): FALSE;
+		esac;
+
+		next(downF2) := case
+			(elev = 2) & (mode = goingDown): FALSE;
+		esac;
+
+		next(downF3) := case
+			elev = 3: FALSE;
+		esac;
+
+		next(button1) := case
+			elev = 1: FALSE;
+		esac;
+
+		next(button2) := case
+			(elev = 2) & (mode = goingDown) & (dest = down2): FALSE;
+			(elev = 2) & (mode = goingUp) & (dest = up2): FALSE;
+		esac;
+
+		next(button3) := case
+			elev = 3: FALSE;
+		esac;
+
+		------------------------------------------------------------------
 		-- Define next case for the CAR.
 		------------------------------------------------------------------
 		next(car) := case
@@ -92,13 +124,18 @@ MODULE main
 		next(dest) := case
 			(noReq = TRUE) : none;
 			-- If there is a request on the 1st floor and the car is on the 2nd floor
-			(upF1 = TRUE) & (mode = goingDown) & (elev = 2) & (door = closed) : up1;
+			(upF1 = TRUE) & (mode = goingDown) & (elev = 2) & (door = open) & (car = still): up1;
 			-- If upF1 is true and the car is going down from the 3rd floor, and there is no req on the 2nd floor, service 1st floor.
-			(upF1 = TRUE) & (mode = goingDown) & (elev = 3) & (downF2 = FALSE) & (button2 = FALSE) & (door = closed): up1;
+			(upF1 = TRUE) & (mode = goingDown) & (elev = 3) & (downF2 = FALSE) & (button2 = FALSE) & (door = open) & (car = still): up1;
 			-- If upF1 and downF2 are both pressed and the elevator is going down from floor 3, service floor 2 first.
-			((upF1 = TRUE) & (downF2 = TRUE)) & (elev = 3) & (mode = goingDown): down2;
+			((upF1 = TRUE) & (downF2 = TRUE)) & (elev = 3) & (mode = goingDown) & (door = open) & (car = still): down2;
+			-- If there is a req for 2nd floor and we are going down from the third floor, go to 2nd floor next.
+			(downF2 = TRUE) & (mode = goingDown) & (elev = 3) & (door = open) & (car = still): down2;
 			-- If upF2 and downF3 are pressed and the car is going up from the first floor, serice 2nd floor first.
-			((upF2 = TRUE) & (downF3 = TRUE)) & (mode = goingUp) & (elev = 1): up2;
+			((upF2 = TRUE) & (downF3 = TRUE)) & (mode = goingUp) & (elev = 1) & (door = open) & (car = still): up2;
+			-- If there is no req for 2, but there is for 3, and we are going up from floor 1, set dest for floor 3.
+			(upF2 = FALSE) & (button2 = FALSE) & (downF3 = TRUE) & (mode = goingUp) & (elev = 1) & (door = open) & (car = still): down3;
+
 
 
 		esac;
