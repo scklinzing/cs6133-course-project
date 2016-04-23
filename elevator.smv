@@ -106,7 +106,16 @@ MODULE main
 		------------------------------------------------------------------
 		-- Define next case for the ELEV.
 		------------------------------------------------------------------
-		
+		next(elev) := case
+			-- If we are on the 1st floor and we are going up, the next floor is 2.
+			(elev = 1) & (mode = goingUp) & ((dest != none) | (dest != up1)): 2;
+			-- If we are on 2nd floor, and going up, and destination is 3rd floor, go to floor 3.
+			(elev = 2) & (mode = goingUp) & (dest = down3): 3;
+			-- If we are on floor 2 and going down and the destination is 1st floor, go down to the first floor.
+			(elev = 2) & (mode = goingDown) & (dest = up1): 1;
+			-- If we are on the 3rd floor and we are going down, the next floor is 2.
+			(elev = 3) & (mode = goingDown) & ((dest != none) | (dest != down3): 2;
+		esac;
 
 		------------------------------------------------------------------
 		-- Define next case for the MODE.
