@@ -1,0 +1,38 @@
+-- MAIN Module
+MODULE main
+	VAR
+		--The state of the elevator car
+		car: {still, moving};
+		--The state of the elevator door
+		door: {open, closed};
+		--The destination where elevator will move to serve a request
+		dest: {none, up1, up2, down2, down3};
+		--Position of the elevator car
+		elev: 1..3;
+		--To remember what direction the elevator was moving once it stops
+		mode: {goingUp, goingDown};
+
+		--The first 7 variables are semi-free variables. If they are off (FALSE),
+		--then they should become activated (TRUE) randomly, but once they are
+		--activated (by becoming TRUE) the system should decide when they are
+		--turned off (returned back to FALSE)
+
+		--External Buttons: Each button is either on or off (TRUE or FALSE)
+	
+		upF1: boolean;
+		upF2: boolean;
+		downF2: boolean;
+		downF3: boolean;
+
+		--Internal Buttons: Buttons inside elevator that tell the elevator where
+		--to go. Each button is either on or off (TRUE or FALSE)
+		
+		button1: boolean;
+		button2: boolean;
+		button3: boolean;
+
+	ASSIGN
+		-- You continue and put your NuSMV code here
+
+	LTLSPEC
+		--  You put all the properties to be verified here
