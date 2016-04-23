@@ -34,5 +34,20 @@ MODULE main
 	ASSIGN
 		-- You continue and put your NuSMV code here
 
+		init(car) := still;
+		init(door) := closed;
+		init(dest) := none;
+		init(elev) := 1;
+		init(mode) := goingUp;
+
+		-- Initialize the buttons
+		init(upF1) := FALSE;
+		init(upF2) := FALSE;
+		init(downF2) := FALSE;
+		init(downF3) := FALSE;
+		init(button1) := FALSE;
+		init(button2) := FALSE;
+		init(button3) := FALSE;
+
 	LTLSPEC
 		--  You put all the properties to be verified here
