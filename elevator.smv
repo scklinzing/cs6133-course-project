@@ -127,19 +127,19 @@ MODULE main
 		------------------------------------------------------------------
 		next(dest) := case
 			(noReq = TRUE) : none;
-			-- FIRST FLOOR DESTINATION
+			-- FIRST FLOOR DESTINATION -----------
 			-- If on the second floor going down and button 1 (in or out) is true, then set dest for floor 1.
 			(elev = 2) & ((upF1 = TRUE) | (button1 = TRUE)) & (mode = goingDown) & (car = still): up1;
 			-- If you are on floor 3 going down, and button 1 (in or out) is pressed, and there is no req for floor 2, go to floor 1.
 			(elev = 3) & ((upF1 = TRUE) | (button1 = TRUE)) & (mode = goingDown) & (downF2 = FALSE) & (button2 = FALSE) & (car = still): up1;
 
-			-- SECOND FLOOR DESTINATION
+			-- SECOND FLOOR DESTINATION -----------
 			-- If you are on floor 3 going down and button 2 (in or down out) are pressed, go to down 2.
 			(elev = 3) & ((downF2 = TRUE) | (button2 = TRUE)) & (mode = goingDown) & (car = still): down2;
 			-- If you are on floor 1 and going up and button 2 (in or out) is pressed, go to up 2.
 			(elev = 1) & ((upF2 = TRUE) | (button2 = TRUE)) & (mode = goingUp) & (car = still): up2;
 
-			-- THIRD FLOOR DESTINATION
+			-- THIRD FLOOR DESTINATION -----------
 			-- If you are on the second floor going up and button 3 (in or out) is pressed, go to down 3.
 			(elev = 2) & ((downF3 = TRUE) | (button3 = TRUE)) & (mode = goingUp) & (car = still): down3;
 			-- If you are on the first floor goind up and neither of the up 2nd floor buttons are pressed, the dest is 3rd floor.
@@ -189,6 +189,24 @@ MODULE main
 			(door = closed) : 1;
 		esac;
 
+	CTLSPEC
+		-- Make sure that every state is reachable.
+		EF(car = still);
+		EF(car = moving);
+		EF(door = open);
+		EF(door = closed);
+		EF(dest = none);
+		EF(dest = up1);
+		EF(dest = up2);
+		EF(dest = down2);
+		EF(dest = down3);
+		EF(elev = 1);
+		EF(elev = 2);
+		EF(elev = 3);
+		EF(mode = goingUp);
+		EF(mode = goingDown);
+		-- No button can reach a state where it remains pressed forever.
+		(AG AF !button1) & (AG AF !button2) & (AG AF !button3) & (AG AF !upF1) & (AG AF !upF2) & (AG AF !downF2) & (AG AF !downF3);
 
 	LTLSPEC
 		--  You put all the properties to be verified here
