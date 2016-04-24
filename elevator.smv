@@ -66,24 +66,29 @@ MODULE main
 		------------------------------------------------------------------
 		next(upF1) := case
 			elev = 1: FALSE;
+			TRUE : upF1;
 		esac;
 
 		next(upF2) := case
 			-- Must be on the second floor and going up to turn off  this button
 			(elev = 2) & (mode = goingUp): FALSE;
+			TRUE : upF2;
 		esac;
 
 		next(downF2) := case
 			-- Must be on the second floor and going down to turn off this button.
 			(elev = 2) & (mode = goingDown): FALSE;
+			TRUE : downF2;
 		esac;
 
 		next(downF3) := case
 			elev = 3: FALSE;
+			TRUE : downF3;
 		esac;
 
 		next(button1) := case
 			elev = 1: FALSE;
+			TRUE : button1;
 		esac;
 
 		next(button2) := case
@@ -91,10 +96,12 @@ MODULE main
 			(elev = 2) & (mode = goingDown) & (dest = down2): FALSE;
 			-- Must be on the second floor and going up with the dest going up.
 			(elev = 2) & (mode = goingUp) & (dest = up2): FALSE;
+			TRUE: button2;
 		esac;
 
 		next(button3) := case
 			elev = 3: FALSE;
+			TRUE : button3;
 		esac;
 
 		------------------------------------------------------------------
@@ -107,6 +114,7 @@ MODULE main
 			door = open : still;
 			-- If the destination is not null and the door is closed
 			(dest != none) & (door = closed) : moving;
+			TRUE : car;
 		esac;
 
 		------------------------------------------------------------------
@@ -118,7 +126,7 @@ MODULE main
 			-- If the car is still and there are no requests.
 			(car = still) & (dest = none) : closed;
 			timedOut & (car = still) : open;
-
+			TRUE : door;
 		esac;
 
 		------------------------------------------------------------------
@@ -144,6 +152,8 @@ MODULE main
 			(elev = 2) & ((downF3 = TRUE) | (button3 = TRUE)) & (mode = goingUp) & (car = still): down3;
 			-- If you are on the first floor goind up and neither of the up 2nd floor buttons are pressed, the dest is 3rd floor.
 			(elev = 1) & (upF2 = FALSE) & (button2 = FALSE) & ((downF3 = TRUE) | (button3 = TRUE)) & (mode = goingUp) & (car = still): down3;
+
+			TRUE : dest;
 		esac;
 
 		------------------------------------------------------------------
@@ -157,7 +167,8 @@ MODULE main
 			-- If we are on floor 2 and going down and the destination is 1st floor, go down to the first floor.
 			(elev = 2) & (mode = goingDown) & (dest = up1): 1;
 			-- If we are on the 3rd floor and we are going down, the next floor is 2.
-			(elev = 3) & (mode = goingDown) & ((dest != none) | (dest != down3): 2;
+			(elev = 3) & (mode = goingDown) & ((dest != none) | (dest != down3)): 2;
+			TRUE : elev;
 		esac;
 
 		------------------------------------------------------------------
@@ -165,11 +176,12 @@ MODULE main
 		------------------------------------------------------------------
 		next(mode) := case
 			-- If you are on the first floor, the only direction is up.
-			(evev = 1): goingUp;
+			(elev = 1): goingUp;
 			(elev = 2) & (mode = goingUp) & ((downF3 = TRUE) | (button3 = TRUE)): goingUp;
 			(elev = 2) & (mode = goingDown) & ((upF1 = TRUE) | (button1 = TRUE)): goingDown;
 			-- If you are on the third floor, the only direction is down.
 			(elev = 3): goingDown;
+			TRUE : mode;
 		esac;
 
 
@@ -187,26 +199,26 @@ MODULE main
 			(door = open) & !timedOut : timer + 1;
 			-- Reset the timer after the doors have closed.
 			(door = closed) : 1;
+			TRUE : timer;
 		esac;
 
-	CTLSPEC
-		-- Make sure that every state is reachable.
-		EF(car = still);
-		EF(car = moving);
-		EF(door = open);
-		EF(door = closed);
-		EF(dest = none);
-		EF(dest = up1);
-		EF(dest = up2);
-		EF(dest = down2);
-		EF(dest = down3);
-		EF(elev = 1);
-		EF(elev = 2);
-		EF(elev = 3);
-		EF(mode = goingUp);
-		EF(mode = goingDown);
-		-- No button can reach a state where it remains pressed forever.
-		(AG AF !button1) & (AG AF !button2) & (AG AF !button3) & (AG AF !upF1) & (AG AF !upF2) & (AG AF !downF2) & (AG AF !downF3);
+-- Make sure that every state is reachable.
+CTLSPEC	EF(car = still)
+CTLSPEC	EF(car = moving)
+CTLSPEC	EF(door = open)
+CTLSPEC	EF(door = closed)
+CTLSPEC	EF(dest = none)
+CTLSPEC	EF(dest = up1)
+CTLSPEC	EF(dest = up2)
+CTLSPEC	EF(dest = down2)
+CTLSPEC	EF(dest = down3)
+CTLSPEC	EF(elev = 1)
+CTLSPEC	EF(elev = 2)
+CTLSPEC	EF(elev = 3)
+CTLSPEC	EF(mode = goingUp)
+CTLSPEC	EF(mode = goingDown)
+-- No button can reach a state where it remains pressed forever.
+CTLSPEC	(AG AF !button1) & (AG AF !button2) & (AG AF !button3) & (AG AF !upF1) & (AG AF !upF2) & (AG AF !downF2) & (AG AF !downF3)
 
-	LTLSPEC
+--LTLSPEC
 		--  You put all the properties to be verified here
