@@ -35,11 +35,18 @@ MODULE main
 		button3: boolean;
 
 	DEFINE
+
+
+
 		-- The timer has timed out, so you should close the doors.
 		-- TODO change this to 5 in the end --------------------------------------------
 		timedOut := timer = 3;
 		-- There is no request if all the buttons are false (not pushed).
 		noReq := (upF1 = FALSE) & (upF2 = FALSE) & (downF2 = FALSE) & (downF3 = FALSE) & (button1 = FALSE) & (button2 = FALSE) & (button3 = FALSE) ;
+		open1 := (elev = 1) & (dest = up1) & (mode = goingUp);
+		open2up := (elev = 2) & (dest = up2) & (mode = goingUp);
+		open2down := (elev = 2) & (dest = down2) & (mode = goingDown);
+		open3 := (elev = 3) & (dest = down3) & (mode = goingDown);
 
 
 	ASSIGN
@@ -59,7 +66,7 @@ MODULE main
 		init(downF3) := FALSE;
 		init(button1) := FALSE;
 		init(button2) := FALSE;
-		init(button3) := FALSE;
+		init(button3) := TRUE;
 
 		------------------------------------------------------------------
 		-- Define next case for the BUTTONS.
@@ -109,11 +116,13 @@ MODULE main
 		------------------------------------------------------------------
 		next(car) := case
 			-- if the door is closed and there are no pending requests
-			(door = closed) & (dest = none) : still;
+			(door = closed) & noReq : still;
 			-- if the timer has not timed out
 			door = open : still;
+			-- the door is closed and there is a request for one of the floors
+			(door = closed) & (open1 | open2down | open2up | open3) : still;
 			-- If the destination is not null and the door is closed
-			(dest != none) & (door = closed) : moving;
+			(dest != none) & (door = closed) & !noReq : moving;
 			TRUE : car;
 		esac;
 
@@ -121,11 +130,10 @@ MODULE main
 		-- Define next case for the DOOR.
 		------------------------------------------------------------------
 		next(door) := case
-			-- If the timer has timed out, or the car is moving
-			timedOut | (car = moving) : closed;
-			-- If the car is still and there are no requests.
-			(car = still) & (dest = none) : closed;
-			timedOut & (car = still) : open;
+			-- If the timer has timed out, or the car is moving, or the car is already still
+			timedOut | (car = moving) | (car = still): closed;
+
+			(car = still) & (open1 | open2down | open2up | open3) : open;
 			TRUE : door;
 		esac;
 
