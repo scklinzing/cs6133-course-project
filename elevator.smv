@@ -66,7 +66,7 @@ MODULE main
 		init(downF3) := FALSE;
 		init(button1) := FALSE;
 		init(button2) := FALSE;
-		init(button3) := TRUE;
+		init(button3) := FALSE;
 
 		------------------------------------------------------------------
 		-- Define next case for the BUTTONS.
@@ -116,13 +116,13 @@ MODULE main
 		------------------------------------------------------------------
 		next(car) := case
 			-- if the door is closed and there are no pending requests
-			(door = closed) & noReq : still;
+			(door = closed) & noReq : still;			
 			-- if the timer has not timed out
 			door = open : still;
-			-- the door is closed and there is a request for one of the floors
-			(door = closed) & (open1 | open2down | open2up | open3) : still;
+			
+			
 			-- If the destination is not null and the door is closed
-			(dest != none) & (door = closed) & !noReq : moving;
+			 --car != still  : moving;
 			TRUE : car;
 		esac;
 
@@ -131,7 +131,9 @@ MODULE main
 		------------------------------------------------------------------
 		next(door) := case
 			-- If the timer has timed out, or the car is moving, or the car is already still
-			timedOut | (car = moving) | (car = still): closed;
+			(car = moving) : closed;
+			timedOut & (car = still): closed;			
+			(car = still) & noReq : closed;
 
 			(car = still) & (open1 | open2down | open2up | open3) : open;
 			TRUE : door;
@@ -210,23 +212,54 @@ MODULE main
 			TRUE : timer;
 		esac;
 
--- Make sure that every state is reachable.
+		
+-- The Elevator can't move with it's doors open
+CTLSPEC AG ((door = open) -> (car = still))
+
+-- Make sure that every state is reachable. Any state that is not an initial state can't be reached unless there is a request
+
 CTLSPEC	EF(car = still)
-CTLSPEC	EF(car = moving)
-CTLSPEC	EF(door = open)
+CTLSPEC	EF(!noReq -> (car = moving))
+CTLSPEC	EF(!noReq -> (door = open))
 CTLSPEC	EF(door = closed)
 CTLSPEC	EF(dest = none)
-CTLSPEC	EF(dest = up1)
-CTLSPEC	EF(dest = up2)
-CTLSPEC	EF(dest = down2)
-CTLSPEC	EF(dest = down3)
-CTLSPEC	EF(elev = 1)
-CTLSPEC	EF(elev = 2)
-CTLSPEC	EF(elev = 3)
+CTLSPEC	EF(!noReq ->(dest = up1))
+CTLSPEC	EF(!noReq ->(dest = up2))
+CTLSPEC	EF(!noReq ->(dest = down2))
+CTLSPEC	EF(!noReq ->(dest = down3))
+CTLSPEC	EF(!noReq ->(elev = 1))
+CTLSPEC	EF(!noReq ->(elev = 2))
+CTLSPEC	EF(!noReq ->(elev = 3))
 CTLSPEC	EF(mode = goingUp)
-CTLSPEC	EF(mode = goingDown)
+CTLSPEC	EF(!noReq ->(mode = goingDown))
+
+-- If a button is pressed it will remain pressed until the request is serviced with the car stopping and opening it's doors
+CTLSPEC AG((upF1 = TRUE) ->A[(upF1 = TRUE) U (elev = 1 & door = open)]);
+CTLSPEC AG((upF2 = TRUE) ->A[(upF2 = TRUE) U (elev = 2 & door = open)]);
+CTLSPEC AG((downF2 = TRUE) ->A[(downF2 = TRUE) U (elev = 2 & door = open)]);
+CTLSPEC AG((downF3 = TRUE) ->A[(downF3 = TRUE) U (elev = 3 & door = open)]);		
+CTLSPEC AG((button1 = TRUE) ->A[(button1 = TRUE) U (elev = 1 & door = open)]);	
+CTLSPEC AG((button2 = TRUE) ->A[(button2 = TRUE) U (elev = 2 & door = open)]);
+CTLSPEC AG((button3 = TRUE) ->A[(button3 = TRUE) U (elev = 3 & door = open)]);	
+
+-- A button must return to false as soon as the cabin stops at the correct floor and opens the doors.
+CTLSPEC AG ((button1 = TRUE & (elev = 1)& door = open) -> AX (button1 != TRUE))
+CTLSPEC AG ((button2 = TRUE & (elev = 2)& door = open) -> AX (button2 != TRUE))
+CTLSPEC AG ((button3 = TRUE & (elev = 3)& door = open) -> AX (button3 != TRUE))
+	
+CTLSPEC AG ((upF1 = TRUE & (elev = 1)& door = open) -> AX (upF1 != TRUE))
+CTLSPEC AG ((upF2 = TRUE & (elev = 2)& door = open) -> AX (upF2 != TRUE))
+CTLSPEC AG ((downF2 = TRUE & (elev = 2)& door = open) -> AX (downF2 != TRUE))
+CTLSPEC AG ((downF3 = TRUE & (elev = 3)& door = open) -> AX (downF3 != TRUE))
+
+
 -- No button can reach a state where it remains pressed forever.
 CTLSPEC	(AG AF !button1) & (AG AF !button2) & (AG AF !button3) & (AG AF !upF1) & (AG AF !upF2) & (AG AF !downF2) & (AG AF !downF3)
+
+--If the elevator is not 1 then it can move down
+CTLSPEC AG (elev = 1 -> AX( mode != goingDown))
+--If the elevator is not 3 then it can move up
+CTLSPEC AG (elev = 3 -> AX( mode != goingUp))
 
 --LTLSPEC
 		--  You put all the properties to be verified here
