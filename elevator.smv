@@ -42,28 +42,32 @@ MODULE main
 		-- TODO change this to 5 in the end --------------------------------------------
 		timedOut := timer = 3;
 		-- There is no request if all the buttons are false (not pushed).
-		noReq := (upF1 = FALSE) & (upF2 = FALSE) & (downF2 = FALSE) & (downF3 = FALSE) & (button1 = FALSE) & (button2 = FALSE) & (button3 = FALSE) ;
+		noReq := (upF1 = FALSE) & (upF2 = FALSE) & (downF2 = FALSE) & (downF3 = FALSE) & (button1 = FALSE) & (button2 = FALSE) & (button3 = FALSE);
+		-- If we are on the first floor, and it is our destination, and the mode is going up, open the doors.
 		open1 := (elev = 1) & (dest = up1) & (mode = goingUp);
+		-- If we are on the second floor and it is our destination, and the mode is going up, open the doors.
 		open2up := (elev = 2) & (dest = up2) & (mode = goingUp);
+		-- If we are on the second floor and it is our destination, and the mode is going down, open the doors.
 		open2down := (elev = 2) & (dest = down2) & (mode = goingDown);
+		-- If we are on the third floor and it is our destination, and the mode is going down, open the doors.
 		open3 := (elev = 3) & (dest = down3) & (mode = goingDown);
 
 
 	ASSIGN
 		-- You continue and put your NuSMV code here
 
-		init(car) := still;
-		init(door) := closed;
-		init(dest) := none;
-		init(elev) := 1;
-		init(mode) := goingUp;
-		init(timer) := 3;
+		init(car) := still; -- the car starts being still
+		init(door) := closed; -- the doors start being closed
+		init(dest) := none; -- there is originally no destination
+		init(elev) := 1; -- initialized on the first floor
+		init(mode) := goingUp; -- goingUp is the only option from the first floor
+		init(timer) := 1; -- the doors are closed, so the timer is reset.
 
 		-- Initialize the buttons
 		init(upF1) := FALSE;
 		init(upF2) := FALSE;
-		init(downF2) := FALSE;
-		init(downF3) := FALSE;
+		init(downF2) := TRUE;
+		init(downF3) := TRUE;
 		init(button1) := FALSE;
 		init(button2) := FALSE;
 		init(button3) := FALSE;
@@ -72,42 +76,44 @@ MODULE main
 		-- Define next case for the BUTTONS.
 		------------------------------------------------------------------
 		next(upF1) := case
-			elev = 1: FALSE;
+			-- Must be on the first floor and the doors must be open in order to turn off this button.
+			(elev = 1) & (door = open): FALSE;
 			TRUE : upF1;
 		esac;
 
 		next(upF2) := case
-			-- Must be on the second floor and going up to turn off  this button
-			(elev = 2) & (mode = goingUp): FALSE;
+			-- Must be on the second floor and going up to turn off this button
+			(elev = 2) & (mode = goingUp) & (door = open): FALSE;
 			TRUE : upF2;
 		esac;
 
 		next(downF2) := case
 			-- Must be on the second floor and going down to turn off this button.
-			(elev = 2) & (mode = goingDown): FALSE;
+			(elev = 2) & (mode = goingDown) & (door = open): FALSE;
 			TRUE : downF2;
 		esac;
 
 		next(downF3) := case
-			elev = 3: FALSE;
+			-- Must be on the third floor and the doors must be open to turn off this button.
+			(elev = 3) & (door = open): FALSE;
 			TRUE : downF3;
 		esac;
 
 		next(button1) := case
-			elev = 1: FALSE;
+			(elev = 1) & (door = open): FALSE;
 			TRUE : button1;
 		esac;
 
 		next(button2) := case
 			-- Must be on the second floor and going down an the dest must be goind down.
-			(elev = 2) & (mode = goingDown) & (dest = down2): FALSE;
+			(elev = 2) & (mode = goingDown) & (dest = down2) & (door = open): FALSE;
 			-- Must be on the second floor and going up with the dest going up.
-			(elev = 2) & (mode = goingUp) & (dest = up2): FALSE;
+			(elev = 2) & (mode = goingUp) & (dest = up2) & (door = open): FALSE;
 			TRUE: button2;
 		esac;
 
 		next(button3) := case
-			elev = 3: FALSE;
+			(elev = 3) & (door = open): FALSE;
 			TRUE : button3;
 		esac;
 
@@ -119,10 +125,10 @@ MODULE main
 			(door = closed) & noReq : still;			
 			-- if the timer has not timed out
 			door = open : still;
-			
-			
 			-- If the destination is not null and the door is closed
-			 --car != still  : moving;
+			(door = closed) & (!open1 & !open2down & !open2up & !open3) : moving;
+			-- If we are at the destination, stop moving.
+			(door = closed) & (open1 | open2down | open2up | open3) : still;
 			TRUE : car;
 		esac;
 
@@ -130,11 +136,13 @@ MODULE main
 		-- Define next case for the DOOR.
 		------------------------------------------------------------------
 		next(door) := case
-			-- If the timer has timed out, or the car is moving, or the car is already still
+			-- If the car is moving, the doors are always closed.
 			(car = moving) : closed;
-			timedOut & (car = still): closed;			
-			(car = still) & noReq : closed;
-
+			-- If the timer has timed out and the car is still, close the doors.
+			timedOut & (car = still): closed;
+			-- If the car is still and there are no requests, close the doors.
+			(car = still) & noReq & timedOut : closed;
+			-- If the car is still and it is at the floor of a request, open the doors.
 			(car = still) & (open1 | open2down | open2up | open3) : open;
 			TRUE : door;
 		esac;
@@ -171,13 +179,13 @@ MODULE main
 		------------------------------------------------------------------
 		next(elev) := case
 			-- If we are on the 1st floor and we are going up, the next floor is 2.
-			(elev = 1) & (mode = goingUp) & ((dest != none) & (dest != up1)): 2;
+			(elev = 1) & (mode = goingUp) & ((dest != none) & (dest != up1)) & (car = moving) : 2;
 			-- If we are on 2nd floor, and going up, and destination is 3rd floor, go to floor 3.
-			(elev = 2) & (mode = goingUp) & (dest = down3): 3;
+			(elev = 2) & (mode = goingUp) & (dest = down3) & (car = moving) : 3;
 			-- If we are on floor 2 and going down and the destination is 1st floor, go down to the first floor.
-			(elev = 2) & (mode = goingDown) & (dest = up1): 1;
+			(elev = 2) & (mode = goingDown) & (dest = up1) & (car = moving) : 1;
 			-- If we are on the 3rd floor and we are going down, the next floor is 2.
-			(elev = 3) & (mode = goingDown) & ((dest != none) & (dest != down3)): 2;
+			(elev = 3) & (mode = goingDown) & ((dest != none) & (dest != down3)) & (car = moving) : 2;
 			TRUE : elev;
 		esac;
 
