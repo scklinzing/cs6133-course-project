@@ -62,12 +62,12 @@ MODULE main
 
 		-- Initialize the buttons
 		init(upF1) := FALSE;
-		init(upF2) := TRUE;
-		init(downF2) := TRUE;
-		init(downF3) := TRUE;
+		init(upF2) := FALSE;
+		init(downF2) := FALSE;
+		init(downF3) := FALSE;
 		init(button1) := FALSE;
 		init(button2) := FALSE;
-		init(button3) := FALSE;
+		init(button3) := TRUE;
 
 		------------------------------------------------------------------
 		-- Define next case for the BUTTONS.
@@ -240,8 +240,7 @@ CTLSPEC	EF(!noReq ->(elev = 3))
 CTLSPEC	EF(mode = goingUp)
 CTLSPEC	EF(!noReq ->(mode = goingDown))
 
--- OLD If a button is pressed it will remain pressed until the request is serviced with the car stopping and opening its doors
--- If a button is pressed it will remain pressed until the request is serviced with the car stopping at the correct floor before opening its doors
+-- If a button is pressed it will remain pressed until the request is serviced with the car stopping at the correct floor BEFORE opening its doors
 CTLSPEC AG((upF1 = TRUE) ->A[(upF1 = TRUE) U (elev = 1 & door = closed & car = still)]);
 CTLSPEC AG((upF2 = TRUE) ->A[(upF2 = TRUE) U (elev = 2 & door = closed & car = still)]);
 CTLSPEC AG((downF2 = TRUE) ->A[(downF2 = TRUE) U (elev = 2 & door = closed & car = still)]);
@@ -250,8 +249,7 @@ CTLSPEC AG((button1 = TRUE) ->A[(button1 = TRUE) U (elev = 1 & door = closed & c
 CTLSPEC AG((button2 = TRUE) ->A[(button2 = TRUE) U (elev = 2 & door = closed & car = still)]);
 CTLSPEC AG((button3 = TRUE) ->A[(button3 = TRUE) U (elev = 3 & door = closed & car = still)]);	
 
--- OLD A button must return to false as soon as the cabin stops at the correct floor and opens the doors.
--- A button must return to false as soon as the cabin stops at the correct floor before it opens the doors.
+-- A button must return to false as soon as the car stops at the correct floor BEFORE it opens the doors.
 CTLSPEC AG ((button1 = TRUE & (elev = 1) & (door = open) & (car = still)) -> AX (button1 != TRUE))
 CTLSPEC AG ((button2 = TRUE & (elev = 2) & (door = open) & (car = still)) -> AX (button2 != TRUE))
 CTLSPEC AG ((button3 = TRUE & (elev = 3) & (door = open) & (car = still)) -> AX (button3 != TRUE))
@@ -265,9 +263,9 @@ CTLSPEC AG ((downF3 = TRUE & (elev = 3) & (door = open) & (car = still)) -> AX (
 -- No button can reach a state where it remains pressed forever.
 CTLSPEC	(AG AF !button1) & (AG AF !button2) & (AG AF !button3) & (AG AF !upF1) & (AG AF !upF2) & (AG AF !downF2) & (AG AF !downF3)
 
---If the elevator is not 1 then it can move down
+--If the elevator is not on floor 1, then it can move down
 CTLSPEC AG (elev = 1 -> AX( mode != goingDown))
---If the elevator is not 3 then it can move up
+--If the elevator is not on floor 3, then it can move up
 CTLSPEC AG (elev = 3 -> AX( mode != goingUp))
 
 -- Make sure the elevator does not skip floors going up or down.
