@@ -268,5 +268,12 @@ CTLSPEC AG (elev = 1 -> AX( mode != goingDown))
 --If the elevator is not 3 then it can move up
 CTLSPEC AG (elev = 3 -> AX( mode != goingUp))
 
+-- Make sure the elevator does not skip floors going up or down.
+CTLSPEC AG  (elev = 3 & mode = goingDown) -> AX (elev = 2)
+CTLSPEC AG  (elev = 1 & mode = goingUp) -> AX (elev = 2)
+
+CTLSPEC AG  (elev = 2 & mode = goingDown) -> AX (elev = 1)
+CTLSPEC AG  (elev = 2 & mode = goingUp) -> AX (elev = 3)
+
 --LTLSPEC
 		--  You put all the properties to be verified here
