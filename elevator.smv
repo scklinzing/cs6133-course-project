@@ -36,8 +36,6 @@ MODULE main
 
 	DEFINE
 
-
-
 		-- The timer has timed out, so you should close the doors.
 		-- TODO change this to 5 in the end --------------------------------------------
 		timedOut := timer = 3;
@@ -51,7 +49,6 @@ MODULE main
 		open2down := (elev = 2) & (dest = down2) & (mode = goingDown);
 		-- If we are on the third floor and it is our destination, and the mode is going down, open the doors.
 		open3 := (elev = 3) & (dest = down3) & (mode = goingDown);
-
 
 	ASSIGN
 		-- You continue and put your NuSMV code here
@@ -76,44 +73,44 @@ MODULE main
 		-- Define next case for the BUTTONS.
 		------------------------------------------------------------------
 		next(upF1) := case
-			-- Must be on the first floor and the doors must be open in order to turn off this button.
-			(elev = 1) & (door = open): FALSE;
+			-- Must be on the first floor and the doors must be closed in order to turn off this button.
+			(elev = 1) & (door = closed) & (car = still): FALSE;
 			TRUE : upF1;
 		esac;
 
 		next(upF2) := case
 			-- Must be on the second floor and going up to turn off this button
-			(elev = 2) & (mode = goingUp) & (door = open): FALSE;
+			(elev = 2) & (mode = goingUp) & (door = closed) & (car = still): FALSE;
 			TRUE : upF2;
 		esac;
 
 		next(downF2) := case
 			-- Must be on the second floor and going down to turn off this button.
-			(elev = 2) & (mode = goingDown) & (door = open): FALSE;
+			(elev = 2) & (mode = goingDown) & (door = closed) & (car = still): FALSE;
 			TRUE : downF2;
 		esac;
 
 		next(downF3) := case
-			-- Must be on the third floor and the doors must be open to turn off this button.
-			(elev = 3) & (door = open): FALSE;
+			-- Must be on the third floor and the doors must be closed to turn off this button.
+			(elev = 3) & (door = closed) & (car = still): FALSE;
 			TRUE : downF3;
 		esac;
 
 		next(button1) := case
-			(elev = 1) & (door = open): FALSE;
+			(elev = 1) & (door = closed) & (car = still): FALSE;
 			TRUE : button1;
 		esac;
 
 		next(button2) := case
 			-- Must be on the second floor and going down an the dest must be goind down.
-			(elev = 2) & (mode = goingDown) & (dest = down2) & (door = open): FALSE;
+			(elev = 2) & (mode = goingDown) & (dest = down2) & (door = closed) & (car = still): FALSE;
 			-- Must be on the second floor and going up with the dest going up.
-			(elev = 2) & (mode = goingUp) & (dest = up2) & (door = open): FALSE;
+			(elev = 2) & (mode = goingUp) & (dest = up2) & (door = closed) & (car = still): FALSE;
 			TRUE: button2;
 		esac;
 
 		next(button3) := case
-			(elev = 3) & (door = open): FALSE;
+			(elev = 3) & (door = closed) & (car = still): FALSE;
 			TRUE : button3;
 		esac;
 
@@ -241,24 +238,26 @@ CTLSPEC	EF(!noReq ->(elev = 3))
 CTLSPEC	EF(mode = goingUp)
 CTLSPEC	EF(!noReq ->(mode = goingDown))
 
--- If a button is pressed it will remain pressed until the request is serviced with the car stopping and opening it's doors
-CTLSPEC AG((upF1 = TRUE) ->A[(upF1 = TRUE) U (elev = 1 & door = open)]);
-CTLSPEC AG((upF2 = TRUE) ->A[(upF2 = TRUE) U (elev = 2 & door = open)]);
-CTLSPEC AG((downF2 = TRUE) ->A[(downF2 = TRUE) U (elev = 2 & door = open)]);
-CTLSPEC AG((downF3 = TRUE) ->A[(downF3 = TRUE) U (elev = 3 & door = open)]);		
-CTLSPEC AG((button1 = TRUE) ->A[(button1 = TRUE) U (elev = 1 & door = open)]);	
-CTLSPEC AG((button2 = TRUE) ->A[(button2 = TRUE) U (elev = 2 & door = open)]);
-CTLSPEC AG((button3 = TRUE) ->A[(button3 = TRUE) U (elev = 3 & door = open)]);	
+-- OLD If a button is pressed it will remain pressed until the request is serviced with the car stopping and opening its doors
+-- If a button is pressed it will remain pressed until the request is serviced with the car stopping at the correct floor before opening its doors
+CTLSPEC AG((upF1 = TRUE) ->A[(upF1 = TRUE) U (elev = 1 & door = closed & car = still)]);
+CTLSPEC AG((upF2 = TRUE) ->A[(upF2 = TRUE) U (elev = 2 & door = closed & car = still)]);
+CTLSPEC AG((downF2 = TRUE) ->A[(downF2 = TRUE) U (elev = 2 & door = closed & car = still)]);
+CTLSPEC AG((downF3 = TRUE) ->A[(downF3 = TRUE) U (elev = 3 & door = closed & car = still)]);		
+CTLSPEC AG((button1 = TRUE) ->A[(button1 = TRUE) U (elev = 1 & door = closed & car = still)]);	
+CTLSPEC AG((button2 = TRUE) ->A[(button2 = TRUE) U (elev = 2 & door = closed & car = still)]);
+CTLSPEC AG((button3 = TRUE) ->A[(button3 = TRUE) U (elev = 3 & door = closed & car = still)]);	
 
--- A button must return to false as soon as the cabin stops at the correct floor and opens the doors.
-CTLSPEC AG ((button1 = TRUE & (elev = 1)& door = open) -> AX (button1 != TRUE))
-CTLSPEC AG ((button2 = TRUE & (elev = 2)& door = open) -> AX (button2 != TRUE))
-CTLSPEC AG ((button3 = TRUE & (elev = 3)& door = open) -> AX (button3 != TRUE))
+-- OLD A button must return to false as soon as the cabin stops at the correct floor and opens the doors.
+-- A button must return to false as soon as the cabin stops at the correct floor before it opens the doors.
+CTLSPEC AG ((button1 = TRUE & (elev = 1) & (door = open) & (car = still)) -> AX (button1 != TRUE))
+CTLSPEC AG ((button2 = TRUE & (elev = 2) & (door = open) & (car = still)) -> AX (button2 != TRUE))
+CTLSPEC AG ((button3 = TRUE & (elev = 3) & (door = open) & (car = still)) -> AX (button3 != TRUE))
 	
-CTLSPEC AG ((upF1 = TRUE & (elev = 1)& door = open) -> AX (upF1 != TRUE))
-CTLSPEC AG ((upF2 = TRUE & (elev = 2)& door = open) -> AX (upF2 != TRUE))
-CTLSPEC AG ((downF2 = TRUE & (elev = 2)& door = open) -> AX (downF2 != TRUE))
-CTLSPEC AG ((downF3 = TRUE & (elev = 3)& door = open) -> AX (downF3 != TRUE))
+CTLSPEC AG ((upF1 = TRUE & (elev = 1) & (door = open) & (car = still)) -> AX (upF1 != TRUE))
+CTLSPEC AG ((upF2 = TRUE & (elev = 2) & (door = open) & (car = still)) -> AX (upF2 != TRUE))
+CTLSPEC AG ((downF2 = TRUE & (elev = 2) & (door = open) & (car = still)) -> AX (downF2 != TRUE))
+CTLSPEC AG ((downF3 = TRUE & (elev = 3) & (door = open) & (car = still)) -> AX (downF3 != TRUE))
 
 
 -- No button can reach a state where it remains pressed forever.
