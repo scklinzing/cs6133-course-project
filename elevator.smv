@@ -14,7 +14,7 @@ MODULE main
 		mode: {goingUp, goingDown};
 
 		-- How long will the elevator door be open?
-		timer : 1..3;
+		timer : 1..5;
 
 		--The first 7 variables are semi-free variables. If they are off (FALSE),
 		--then they should become activated (TRUE) randomly, but once they are
@@ -41,7 +41,7 @@ MODULE main
 
 		-- The timer has timed out, so you should close the doors.
 		-- TODO change this to 5 in the end --------------------------------------------
-		timedOut := timer = 3;
+		timedOut := timer = 5;
 		-- There is no request if all the buttons are false (not pushed).
 		noReq := (upF1 = FALSE) & (upF2 = FALSE) & (downF2 = FALSE) & (downF3 = FALSE) & (button1 = FALSE) & (button2 = FALSE) & (button3 = FALSE);
 		-- If we are on the first floor, and it is our destination, and the mode is going up, open the doors.
@@ -77,7 +77,7 @@ MODULE main
 		------------------------------------------------------------------
 		-- Define next case for the BUTTONS.
 		------------------------------------------------------------------
-			next(openButton) := case
+		next(openButton) := case
 			-- If the car is moving or the door opens, this button is false
 			 (door = open): FALSE;
 			 car = moving : FALSE;
@@ -88,7 +88,7 @@ MODULE main
 			-- If the car is moving or the door closes, this button is false
 			(door = closed): FALSE;
 			car = moving : FALSE;
-			TRUE : closeButton ;
+			TRUE : closeButton;
 		esac;			
 		
 		next(upF1) := case
@@ -152,15 +152,10 @@ MODULE main
 		-- Define next case for the DOOR.
 		------------------------------------------------------------------
 		next(door) := case
-		
 			--If the closed button is pressed the doors should close
-			(closeButton = TRUE)&(door = open):closed;
-			
-			--If the open button is pressed the doors should open if elevator is still 
-			(openButton = TRUE)&(car = still)&(door = closed): open;
-			
-			
-			
+			(closeButton = TRUE) & (door = open): closed;
+			--If the open button is pressed the doors should open if elevator is still and there are no requests
+			(openButton = TRUE) & (car = still) & (door = closed) & noReq: open;
 			-- If the car is moving, the doors are always closed.
 			(car = moving) : closed;
 			-- If the timer has timed out and the car is still, close the doors.
