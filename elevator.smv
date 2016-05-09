@@ -152,6 +152,15 @@ MODULE main
 		-- Define next case for the DOOR.
 		------------------------------------------------------------------
 		next(door) := case
+		
+			--If the closed button is pressed the doors should close
+			(closeButton = TRUE)&(door = open):closed;
+			
+			--If the open button is pressed the doors should open if elevator is still 
+			(openButton = TRUE)&(car = still)&(door = closed): open;
+			
+			
+			
 			-- If the car is moving, the doors are always closed.
 			(car = moving) : closed;
 			-- If the timer has timed out and the car is still, close the doors.
@@ -238,6 +247,9 @@ MODULE main
 			TRUE : timer;
 		esac;
 
+------------------------------------------------------------------
+-- Begin CTLSPEC
+------------------------------------------------------------------
 		
 -- The Elevator can't move with it's doors open
 CTLSPEC AG ((door = open) -> (car = still))
@@ -260,13 +272,7 @@ CTLSPEC	EF(mode = goingUp)
 CTLSPEC	EF(!noReq ->(mode = goingDown))
 
 -- If a button is pressed it will remain pressed until the request is serviced with the car stopping at the correct floor BEFORE opening its doors
-CTLSPEC AG((upF1 = TRUE) ->A[(upF1 = TRUE) U (elev = 1 & door = closed & car = still)]);
-CTLSPEC AG((upF2 = TRUE) ->A[(upF2 = TRUE) U (elev = 2 & door = closed & car = still)]);
-CTLSPEC AG((downF2 = TRUE) ->A[(downF2 = TRUE) U (elev = 2 & door = closed & car = still)]);
-CTLSPEC AG((downF3 = TRUE) ->A[(downF3 = TRUE) U (elev = 3 & door = closed & car = still)]);		
-CTLSPEC AG((button1 = TRUE) ->A[(button1 = TRUE) U (elev = 1 & door = closed & car = still)]);	
-CTLSPEC AG((button2 = TRUE) ->A[(button2 = TRUE) U (elev = 2 & door = closed & car = still)]);
-CTLSPEC AG((button3 = TRUE) ->A[(button3 = TRUE) U (elev = 3 & door = closed & car = still)]);
+
 CTLSPEC AG((openButton = TRUE) ->A[(openButton = TRUE) U (door = open )]);	
 CTLSPEC AG((closeButton = TRUE) ->A[(closeButton = TRUE) U ( door = closed)]);		
 
@@ -296,8 +302,23 @@ CTLSPEC AG  (elev = 1 & mode = goingUp & !noReq) -> AX (elev = 2)
 CTLSPEC AG  (elev = 2 & mode = goingDown) -> AX (elev = 1)
 CTLSPEC AG  (elev = 2 & mode = goingUp) -> AX (elev = 3)
 
---LTLSPEC
-	
+------------------------------------------------------------------
+-- Begin LTLSPEC
+------------------------------------------------------------------
 
+--The door will never move with it's doors open LTL
+LTLSPEC G (door = open -> F(door = open U car = moving))
+LTLSPEC G (door = open -> !(car = moving))
 
-		--  You put all the properties to be verified here
+--The door should close unless a door open request is requested
+LTLSPEC G (!(car = moving)&(door = open) -> F(door = closed U openButton = TRUE))
+
+--Requests to be delivered to a particular floor are eventually serviced
+
+LTLSPEC G((upF1 = TRUE) ->F((upF1 = TRUE) U (elev = 1 & door = closed & car = still)));
+LTLSPEC G((upF2 = TRUE) ->F((upF2 = TRUE) U (elev = 2 & door = closed & car = still)));
+LTLSPEC G((downF2 = TRUE) ->F((downF2 = TRUE) U (elev = 2 & door = closed & car = still)));
+LTLSPEC G((downF3 = TRUE) ->F((downF3 = TRUE) U (elev = 3 & door = closed & car = still)));		
+LTLSPEC G((button1 = TRUE) ->F((button1 = TRUE) U (elev = 1 & door = closed & car = still)));	
+LTLSPEC G((button2 = TRUE) ->F((button2 = TRUE) U (elev = 2 & door = closed & car = still)));
+LTLSPEC G((button3 = TRUE) ->F((button3 = TRUE) U (elev = 3 & door = closed & car = still)));
