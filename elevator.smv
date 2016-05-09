@@ -12,7 +12,6 @@ MODULE main
 		elev: 1..3;
 		--To remember what direction the elevator was moving once it stops
 		mode: {goingUp, goingDown};
-
 		-- How long will the elevator door be open?
 		timer : 1..5;
 
@@ -40,7 +39,6 @@ MODULE main
 	DEFINE
 
 		-- The timer has timed out, so you should close the doors.
-		-- TODO change this to 5 in the end --------------------------------------------
 		timedOut := timer = 5;
 		-- There is no request if all the buttons are false (not pushed).
 		noReq := (upF1 = FALSE) & (upF2 = FALSE) & (downF2 = FALSE) & (downF3 = FALSE) & (button1 = FALSE) & (button2 = FALSE) & (button3 = FALSE);
@@ -54,8 +52,6 @@ MODULE main
 		open3 := (elev = 3) & (dest = down3) & (mode = goingDown);
 
 	ASSIGN
-		-- You continue and put your NuSMV code here
-
 		init(car) := still; -- the car starts being still
 		init(door) := closed; -- the doors start being closed
 		init(dest) := none; -- there is originally no destination
@@ -116,6 +112,7 @@ MODULE main
 		esac;
 
 		next(button1) := case
+			-- Must be on the first floor with the door closed and the car still in order to turn off this button.
 			(elev = 1) & (door = closed) & (car = still): FALSE;
 			TRUE : button1;
 		esac;
@@ -129,6 +126,7 @@ MODULE main
 		esac;
 
 		next(button3) := case
+			-- Must be on the third floor with the doors closed and the car still to turn off this button.
 			(elev = 3) & (door = closed) & (car = still): FALSE;
 			TRUE : button3;
 		esac;
@@ -215,8 +213,14 @@ MODULE main
 		next(mode) := case
 			-- If you are on the first floor, the only direction is up.
 			(elev = 1): goingUp;
+			-- If you are on the 2nd floor going up, and there is a request on the 3rd floor, continue going up
 			(elev = 2) & (mode = goingUp) & ((downF3 = TRUE) | (button3 = TRUE)): goingUp;
+			-- If you are on the 2nd floor and going down, and there is a request for the 1st floor, continue going down
 			(elev = 2) & (mode = goingDown) & ((upF1 = TRUE) | (button1 = TRUE)): goingDown;
+			-- If you are on floor 2 going up, and there is no request for floor 3, change mode to goingDown
+			(elev = 2) & (mode = goingUp) & (((downF3 = FALSE) & (button3 = FALSE)) & ((upF1 = TRUE) | (button1 = TRUE))): goingDown;
+			-- If you are on floor 2 going down, and there is no request for floor 1, change mode to goingUp
+			(elev = 2) & (mode = goingDown) & (((upF1 = FALSE) & (button1 = FALSE)) & ((downF3 = TRUE) | (button3 = TRUE))): goingUp;
 			-- If you are on the third floor, the only direction is down.
 			(elev = 3): goingDown;
 			TRUE : mode;
