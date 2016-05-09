@@ -62,7 +62,7 @@ MODULE main
 
 		-- Initialize the buttons
 		init(upF1) := FALSE;
-		init(upF2) := FALSE;
+		init(upF2) := TRUE;
 		init(downF2) := TRUE;
 		init(downF3) := TRUE;
 		init(button1) := FALSE;
@@ -207,7 +207,9 @@ MODULE main
 			-- If you are on floor 1 and doors are open, pushing outside or inside buttons will reset timer.
 			(elev = 1) & (door = open) & ((upF1 = TRUE) | (button1 = TRUE)) & !timedOut : 1;
 			-- If you are on floor 2 and doors are open, pushing outside or inside buttons will reset timer.
-			(elev = 2) & (door = open) & ((upF2 = TRUE) | (downF2 = TRUE) | (button2 = TRUE)) & !timedOut : 1;
+			-- Note that this timer depends on the button pushed outside, and the mode.
+			(elev = 2) & (door = open) & ((upF2 = TRUE) | (button2 = TRUE)) & (mode = goingUp) & !timedOut : 1;
+			(elev = 2) & (door = open) & ((downF2 = TRUE) | (button2 = TRUE)) & (mode = goingDown) & !timedOut : 1;
 			-- If you are on floor 3 and doors are open, pushing outside or inside buttons will reset timer.
 			(elev = 3) & (door = open) & ((downF3 = TRUE) | (button3 = TRUE)) & !timedOut : 1;
 			-- If the doors are open and the timer has not timed out, increment timer.
@@ -255,8 +257,8 @@ CTLSPEC AG ((button2 = TRUE & (elev = 2) & (door = open) & (car = still)) -> AX 
 CTLSPEC AG ((button3 = TRUE & (elev = 3) & (door = open) & (car = still)) -> AX (button3 != TRUE))
 	
 CTLSPEC AG ((upF1 = TRUE & (elev = 1) & (door = open) & (car = still)) -> AX (upF1 != TRUE))
-CTLSPEC AG ((upF2 = TRUE & (elev = 2) & (door = open) & (car = still)) -> AX (upF2 != TRUE))
-CTLSPEC AG ((downF2 = TRUE & (elev = 2) & (door = open) & (car = still)) -> AX (downF2 != TRUE))
+CTLSPEC AG ((upF2 = TRUE & (elev = 2) & (door = open) & (car = still) & (mode = goingUp)) -> AX (upF2 != TRUE))
+CTLSPEC AG ((downF2 = TRUE & (elev = 2) & (door = open) & (car = still) & (mode = goingDown)) -> AX (downF2 != TRUE))
 CTLSPEC AG ((downF3 = TRUE & (elev = 3) & (door = open) & (car = still)) -> AX (downF3 != TRUE))
 
 
